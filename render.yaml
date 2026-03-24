@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: wolt-rocket-tracker
+    name: rocket-tracker
     runtime: node
     plan: free
     buildCommand: npm install

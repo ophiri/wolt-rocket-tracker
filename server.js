@@ -232,7 +232,7 @@ async function scrapeChannel() {
 // ─── START ───
 app.listen(PORT, () => {
     console.log('\n╔══════════════════════════════════════════════════╗');
-    console.log('║        🚀 Wolt Rocket Tracker — Server           ║');
+    console.log('║        🚀 Rocket Tracker — Server                 ║');
     console.log('╠══════════════════════════════════════════════════╣');
     console.log(`║  Web UI:    http://localhost:${PORT}                  ║`);
     console.log(`║  API:       http://localhost:${PORT}/api              ║`);
