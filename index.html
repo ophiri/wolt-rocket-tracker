@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#009de0">
+    <title>Wolt Rocket Tracker 🚀</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f5f5;
+            color: #202125;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+            padding-bottom: env(safe-area-inset-bottom, 0);
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: #009de0;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo span {
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .header-logo .rocket-emoji {
+            font-size: 28px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .header-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            backdrop-filter: blur(4px);
+        }
+
+        /* ── MAIN LAYOUT ── */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+        }
+
+        @media (max-width: 860px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 12px;
+                gap: 12px;
+            }
+
+            .header {
+                padding: 10px 14px;
+            }
+
+            .header-logo span {
+                font-size: 18px;
+            }
+
+            .header-logo .rocket-emoji {
+                font-size: 22px;
+            }
+
+            .header-right {
+                gap: 8px;
+                font-size: 11px;
+            }
+
+            .header-badge {
+                padding: 4px 10px;
+                font-size: 11px;
+            }
+
+            #map {
+                height: 280px;
+            }
+
+            .map-card-header {
+                padding: 10px 14px;
+            }
+
+            .map-card-header h2 {
+                font-size: 15px;
+            }
+
+            .eta-card {
+                padding: 16px;
+            }
+
+            .eta-time {
+                font-size: 42px;
+            }
+
+            .eta-unit {
+                font-size: 14px;
+            }
+
+            .eta-subtext {
+                font-size: 12px;
+            }
+
+            .progress-section {
+                padding: 14px 16px;
+            }
+
+            .status-card {
+                padding: 14px 16px;
+            }
+
+            .details-card {
+                padding: 14px 16px;
+            }
+
+            .telegram-card {
+                padding: 14px 16px;
+            }
+
+            .region-card {
+                padding: 12px 14px;
+            }
+
+            .region-btn {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+
+            .region-btn .region-emoji {
+                font-size: 16px;
+            }
+
+            .alert-feed {
+                max-height: 150px;
+            }
+
+            .sidebar {
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .header {
+                padding: 8px 10px;
+            }
+
+            .header-logo span {
+                font-size: 16px;
+            }
+
+            .header-right > div:last-child {
+                display: none;
+            }
+
+            #map {
+                height: 220px;
+            }
+
+            .eta-time {
+                font-size: 36px;
+            }
+
+            .main-container {
+                padding: 8px;
+                gap: 10px;
+            }
+        }
+
+        /* ── MAP ── */
+        .map-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .map-card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .map-card-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .live-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: pulse-badge 2s infinite;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #2e7d32;
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(46,125,50,0.3); }
+            50% { box-shadow: 0 0 0 6px rgba(46,125,50,0); }
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* ── ETA CARD ── */
+        .eta-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .eta-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .eta-time {
+            font-size: 56px;
+            font-weight: 800;
+            color: #009de0;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .eta-unit {
+            font-size: 16px;
+            color: #999;
+            font-weight: 500;
+        }
+
+        .eta-subtext {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        /* ── PROGRESS BAR ── */
+        .progress-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-header h3 {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .progress-percent {
+            font-size: 14px;
+            font-weight: 700;
+            color: #009de0;
+        }
+
+        .progress-bar-track {
+            height: 8px;
+            background: #e8e8e8;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #009de0, #00c6ff);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-endpoints {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* ── STATUS STEPS ── */
+        .status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .status-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .status-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .status-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .status-step:last-child {
+            padding-bottom: 0;
+        }
+
+        .step-icon-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .step-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            z-index: 1;
+            background: #e8e8e8;
+            color: #999;
+            transition: all 0.5s ease;
+        }
+
+        .step-icon.active {
+            background: #009de0;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,157,224,0.4);
+        }
+
+        .step-icon.done {
+            background: #2e7d32;
+            color: white;
+        }
+
+        .step-line {
+            width: 2px;
+            flex-grow: 1;
+            min-height: 20px;
+            background: #e8e8e8;
+            transition: background 0.5s ease;
+        }
+
+        .step-line.active {
+            background: #2e7d32;
+        }
+
+        .step-info {
+            padding-top: 5px;
+        }
+
+        .step-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #202125;
+        }
+
+        .step-desc {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .step-desc.active-desc {
+            color: #009de0;
+            font-weight: 500;
+        }
+
+        /* ── DETAILS CARD ── */
+        .details-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .details-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #888;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #202125;
+        }
+
+        /* ── SPEED COUNTER ── */
+        .speed-display {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* ── MAP MARKERS ── */
+        .rocket-marker {
+            font-size: 28px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            transition: transform 0.1s linear;
+        }
+
+        .city-marker {
+            background: white;
+            border: 2px solid #009de0;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: #bbb;
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: #009de0;
+            text-decoration: none;
+        }
+
+        /* ── RESTART BTN ── */
+        .restart-btn {
+            background: #009de0;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 14px;
+            transition: background 0.2s;
+            font-family: inherit;
+        }
+
+        .restart-btn:hover {
+            background: #0080b8;
+        }
+
+        /* ── ALERT BANNER ── */
+        .alert-banner {
+            background: #ff5722;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            display: none;
+            animation: flash 1s infinite;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .alert-banner.show {
+            display: block;
+        }
+
+        /* ── IDLE / ALL CLEAR STATE ── */
+        .eta-card.idle {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+        }
+
+        .eta-card.idle .eta-time {
+            font-size: 36px;
+            color: #2e7d32;
+        }
+
+        .eta-card.idle .eta-unit {
+            color: #66bb6a;
+        }
+
+        .eta-card.idle .speed-display {
+            color: #a5d6a7;
+        }
+
+        .eta-card.active-threat {
+            background: linear-gradient(135deg, #fbe9e7 0%, #fff3e0 100%);
+            animation: threat-pulse 2s infinite;
+        }
+
+        @keyframes threat-pulse {
+            0%, 100% { box-shadow: 0 2px 12px rgba(255,87,34,0.15); }
+            50% { box-shadow: 0 2px 20px rgba(255,87,34,0.35); }
+        }
+
+        .eta-card.active-threat .eta-time {
+            color: #d32f2f;
+        }
+
+        .last-check {
+            font-size: 11px;
+            color: #bbb;
+            margin-top: 6px;
+        }
+
+        /* ── TELEGRAM FEED ── */
+        .telegram-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .telegram-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .telegram-status {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .telegram-status.connected {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .telegram-status.disconnected {
+            background: #fce4ec;
+            color: #c62828;
+        }
+
+        .alert-feed {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .alert-feed::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .alert-feed::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 2px;
+        }
+
+        .feed-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 12px;
+            border-left: 3px solid #009de0;
+            animation: slideIn 0.3s ease;
+        }
+
+        .feed-item.missile-alert {
+            border-left-color: #ff5722;
+            background: #fff3e0;
+        }
+
+        .feed-item.intercepted-alert {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .feed-item .feed-time {
+            color: #999;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .feed-item .feed-text {
+            color: #333;
+            word-break: break-word;
+        }
+
+        .feed-item .feed-origin {
+            font-size: 10px;
+            color: #009de0;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .feed-empty {
+            color: #ccc;
+            font-size: 13px;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .test-btn {
+            background: #f0f0f0;
+            color: #555;
+            border: 1px dashed #ccc;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            width: 100%;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .test-btn:hover {
+            background: #e8e8e8;
+            border-color: #999;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── REGION SELECTOR ── */
+        .region-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .region-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .region-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .region-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.25s ease;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .region-btn:hover {
+            border-color: #009de0;
+            background: #f0f8ff;
+            color: #009de0;
+        }
+
+        .region-btn.active {
+            border-color: #009de0;
+            background: #009de0;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,157,224,0.3);
+        }
+
+        .region-btn .region-emoji {
+            font-size: 18px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .region-btn .region-name {
+            display: block;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ALERT BANNER -->
+    <div class="alert-banner" id="alertBanner">
+        ⚠️ INCOMING — Estimated arrival imminent! Seek shelter immediately!
+    </div>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-logo">
+            <span class="rocket-emoji">🚀</span>
+            <span>Wolt Rocket</span>
+        </div>
+        <div class="header-right">
+            <div class="header-badge" id="connectionBadge">📡 MOCK DATA</div>
+            <div>Order #IR-2026-0324</div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-container">
+
+        <!-- MAP -->
+        <div class="map-card">
+            <div class="map-card-header">
+                <h2>🗺️ Live Tracking</h2>
+                <div class="live-badge">
+                    <div class="live-dot"></div>
+                    LIVE
+                </div>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+
+            <!-- REGION SELECTOR -->
+            <div class="region-card">
+                <h3>🎯 יעד — אזור בישראל</h3>
+                <div class="region-buttons">
+                    <button class="region-btn" onclick="setRegion('north')" id="regionNorth">
+                        <span class="region-emoji">🏔️</span>
+                        <span class="region-name">צפון</span>
+                    </button>
+                    <button class="region-btn active" onclick="setRegion('center')" id="regionCenter">
+                        <span class="region-emoji">🏙️</span>
+                        <span class="region-name">מרכז</span>
+                    </button>
+                    <button class="region-btn" onclick="setRegion('south')" id="regionSouth">
+                        <span class="region-emoji">🏜️</span>
+                        <span class="region-name">דרום</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ETA -->
+            <div class="eta-card idle" id="etaCard">
+                <div class="eta-label" id="etaLabel">THREAT STATUS</div>
+                <div class="eta-time" id="etaTime">☀️</div>
+                <div class="eta-unit" id="etaUnit">אין טיל איראני באופק</div>
+                <div class="eta-subtext" id="etaSubtext">All clear — No incoming threats detected</div>
+                <div class="speed-display" id="speedDisplay">Monitoring @beforeredalert...</div>
+                <div class="last-check" id="lastCheck">Last checked: never</div>
+                <button class="restart-btn" id="restartBtn" style="display:none;" onclick="restartSimulation()">🔄 Track Another</button>
+            </div>
+
+            <!-- PROGRESS -->
+            <div class="progress-section">
+                <div class="progress-header">
+                    <h3>Route Progress</h3>
+                    <span class="progress-percent" id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-endpoints">
+                    <span>🇮🇷 Tehran, Iran</span>
+                    <span id="destEndpoint">🇮🇱 Tel Aviv, Israel</span>
+                </div>
+            </div>
+
+            <!-- STATUS STEPS -->
+            <div class="status-card">
+                <h3>Delivery Status</h3>
+                <div class="status-steps" id="statusSteps">
+                    <div class="status-step" data-step="0">
+                        <div class="step-icon-col">
+                            <div class="step-icon active">🏭</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="step-info">
+                            <div class="step-title">Order Confirmed</div>
+                            <div class="step-desc active-desc">Launched from Tehran</div>
+                        </div>
+                    </div>
+                    <div class="status-step" data-step="1">
+                        <div class="step-icon-col">
+                            <div class="step-icon">🚀</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="step-info">
+                            <div class="step-title">In Transit</div>
+                            <div class="step-desc">Crossing Iraqi airspace</div>
+                        </div>
+                    </div>
+                    <div class="status-step" data-step="2">
+                        <div class="step-icon-col">
+                            <div class="step-icon">🇯🇴</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="step-info">
+                            <div class="step-title">Over Jordan</div>
+                            <div class="step-desc">Almost there!</div>
+                        </div>
+                    </div>
+                    <div class="status-step" data-step="3">
+                        <div class="step-icon-col">
+                            <div class="step-icon">📦</div>
+                        </div>
+                        <div class="step-info">
+                            <div class="step-title">Delivered</div>
+                            <div class="step-desc" id="deliveredDesc">Arrived at Tel Aviv</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TELEGRAM FEED -->
+            <div class="telegram-card">
+                <h3>
+                    📡 Telegram Feed
+                    <span class="telegram-status disconnected" id="telegramStatus">Disconnected</span>
+                </h3>
+                <div class="alert-feed" id="alertFeed">
+                    <div class="feed-empty" id="feedEmpty">No alerts yet — waiting for messages...</div>
+                </div>
+                <button class="test-btn" onclick="sendTestAlert()">
+                    🧪 Send Test Alert
+                </button>
+            </div>
+
+            <!-- DETAILS -->
+            <div class="details-card">
+                <h3>Delivery Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Origin</span>
+                    <span class="detail-value">Tehran, Iran 🇮🇷</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Destination</span>
+                    <span class="detail-value" id="destDetail">Tel Aviv, Israel 🇮🇱</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Distance</span>
+                    <span class="detail-value" id="distanceValue">~1,600 km</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Avg Speed</span>
+                    <span class="detail-value">Mach 3 (~3,700 km/h)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Altitude</span>
+                    <span class="detail-value" id="altitudeValue">150 km</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Type</span>
+                    <span class="detail-value">Ballistic (Mock)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        🚀 Wolt Rocket Tracker — Mock Demo &nbsp;|&nbsp; Not real data &nbsp;|&nbsp; Built with ❤️ and Leaflet
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ─── CONFIG ───
+        const TEHRAN = [35.6892, 51.3890];
+        const DEFAULT_ETA_MINUTES = 5;
+        let TOTAL_DURATION_SEC = DEFAULT_ETA_MINUTES * 60; // default 5 min, overridden by Telegram ETA
+        const THIRTY_MINUTES_MS = 30 * 60 * 1000;
+
+        // ─── REGIONS ───
+        const REGIONS = {
+            north: {
+                name: 'חיפה',
+                nameEn: 'Haifa',
+                coords: [32.7940, 34.9896],
+                emoji: '🏔️',
+                label: 'צפון',
+                lastWaypoints: [
+                    [32.80, 39.00],
+                    [32.90, 37.50],
+                    [33.00, 36.50],
+                    [32.90, 35.60],
+                    [32.7940, 34.9896],
+                ],
+            },
+            center: {
+                name: 'תל אביב',
+                nameEn: 'Tel Aviv',
+                coords: [32.0853, 34.7818],
+                emoji: '🏙️',
+                label: 'מרכז',
+                lastWaypoints: [
+                    [32.80, 39.00],
+                    [32.50, 37.50],
+                    [32.30, 36.50],
+                    [32.15, 35.60],
+                    [32.0853, 34.7818],
+                ],
+            },
+            south: {
+                name: 'באר שבע',
+                nameEn: 'Beer Sheva',
+                coords: [31.2530, 34.7915],
+                emoji: '🏜️',
+                label: 'דרום',
+                lastWaypoints: [
+                    [32.80, 39.00],
+                    [32.30, 37.50],
+                    [31.90, 36.20],
+                    [31.50, 35.40],
+                    [31.2530, 34.7915],
+                ],
+            },
+        };
+
+        let currentRegion = 'center';
+
+        function getDestination() {
+            return REGIONS[currentRegion].coords;
+        }
+
+        function getDestName() {
+            return REGIONS[currentRegion].nameEn;
+        }
+
+        function getDestNameHe() {
+            return REGIONS[currentRegion].name;
+        }
+
+        // App mode: 'idle' | 'tracking' | 'arrived'
+        let appMode = 'idle';
+
+        // Route waypoints (curved path over Iraq & Jordan — last segment adapts to region)
+        function buildRoutePoints() {
+            const base = [
+                [35.6892, 51.3890],   // Tehran
+                [35.50, 49.50],
+                [35.20, 47.50],
+                [34.80, 46.00],       // Over western Iran
+                [34.20, 44.50],       // Into Iraq
+                [33.80, 43.50],       // Baghdad area
+                [33.30, 42.00],
+                [33.00, 40.50],
+            ];
+            return base.concat(REGIONS[currentRegion].lastWaypoints);
+        }
+
+        let ROUTE_POINTS = buildRoutePoints();
+
+        // ─── INIT MAP ───
+        const map = L.map('map', {
+            zoomControl: true,
+            scrollWheelZoom: true,
+        }).setView([33.5, 43.0], 5);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap © CARTO',
+            maxZoom: 18,
+        }).addTo(map);
+
+        // ─── ROUTE LINE ───
+        let routeLine = L.polyline(ROUTE_POINTS, {
+            color: '#009de0',
+            weight: 3,
+            opacity: 0.4,
+            dashArray: '8, 8',
+        }).addTo(map);
+
+        // Traveled path
+        const traveledLine = L.polyline([], {
+            color: '#009de0',
+            weight: 4,
+            opacity: 0.9,
+        }).addTo(map);
+
+        // ─── MARKERS ───
+        // Origin
+        const originIcon = L.divIcon({
+            html: '<div style="font-size:24px;">🇮🇷</div>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            className: '',
+        });
+        L.marker(TEHRAN, { icon: originIcon }).addTo(map)
+            .bindPopup('<b>Tehran, Iran</b><br>Launch Site');
+
+        // Destination
+        const destIcon = L.divIcon({
+            html: '<div style="font-size:24px;">🇮🇱</div>',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            className: '',
+        });
+        const destMarker = L.marker(getDestination(), { icon: destIcon }).addTo(map)
+            .bindPopup(`<b>${getDestName()}, Israel</b><br>Destination`);
+
+        // Rocket marker
+        const rocketIcon = L.divIcon({
+            html: '<div class="rocket-marker" id="rocketEmoji">🚀</div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            className: '',
+        });
+        const rocketMarker = L.marker(TEHRAN, { icon: rocketIcon, zIndexOffset: 1000 }).addTo(map);
+
+        // Blast radius circle (shows near end)
+        const blastCircle = L.circle(getDestination(), {
+            radius: 0,
+            color: '#ff5722',
+            fillColor: '#ff5722',
+            fillOpacity: 0.1,
+            weight: 2,
+            opacity: 0,
+        }).addTo(map);
+
+        // ─── INTERPOLATION ───
+        function interpolateRoute(t) {
+            // t goes from 0 to 1
+            t = Math.max(0, Math.min(1, t));
+            const totalSegments = ROUTE_POINTS.length - 1;
+            const segFloat = t * totalSegments;
+            const segIndex = Math.min(Math.floor(segFloat), totalSegments - 1);
+            const segT = segFloat - segIndex;
+
+            const p1 = ROUTE_POINTS[segIndex];
+            const p2 = ROUTE_POINTS[segIndex + 1];
+
+            return [
+                p1[0] + (p2[0] - p1[0]) * segT,
+                p1[1] + (p2[1] - p1[1]) * segT,
+            ];
+        }
+
+        function getAngle(p1, p2) {
+            const dx = p2[1] - p1[1];
+            const dy = p2[0] - p1[0];
+            return Math.atan2(dx, -dy) * (180 / Math.PI);
+        }
+
+        // ─── UI REFS ───
+        const etaTimeEl = document.getElementById('etaTime');
+        const etaUnitEl = document.getElementById('etaUnit');
+        const etaSubtextEl = document.getElementById('etaSubtext');
+        const speedDisplayEl = document.getElementById('speedDisplay');
+        const progressFillEl = document.getElementById('progressFill');
+        const progressPercentEl = document.getElementById('progressPercent');
+        const altitudeValueEl = document.getElementById('altitudeValue');
+        const alertBanner = document.getElementById('alertBanner');
+        const restartBtn = document.getElementById('restartBtn');
+
+        // ─── STATUS STEPS ───
+        function updateStatusSteps(progress) {
+            const steps = document.querySelectorAll('.status-step');
+            let currentStep;
+            if (progress < 0.05) currentStep = 0;
+            else if (progress < 0.55) currentStep = 1;
+            else if (progress < 0.85) currentStep = 2;
+            else currentStep = 3;
+
+            steps.forEach((step, i) => {
+                const icon = step.querySelector('.step-icon');
+                const line = step.querySelector('.step-line');
+                const desc = step.querySelector('.step-desc');
+
+                icon.classList.remove('active', 'done');
+                if (line) line.classList.remove('active');
+                if (desc) desc.classList.remove('active-desc');
+
+                if (i < currentStep) {
+                    icon.classList.add('done');
+                    if (line) line.classList.add('active');
+                } else if (i === currentStep) {
+                    icon.classList.add('active');
+                    if (desc) desc.classList.add('active-desc');
+                }
+            });
+        }
+
+        // ─── SIMULATION ───
+        let startTime = null;
+        let animationId = null;
+        let finished = false;
+        let intercepted = false;
+
+        function simulate(timestamp) {
+            if (!startTime) startTime = timestamp;
+            const elapsed = (timestamp - startTime) / 1000; // seconds
+            const progress = Math.min(elapsed / TOTAL_DURATION_SEC, 1);
+
+            // Position
+            const pos = interpolateRoute(progress);
+            rocketMarker.setLatLng(pos);
+
+            // Traveled path
+            const traveledPoints = [];
+            const steps = 100;
+            for (let i = 0; i <= Math.floor(progress * steps); i++) {
+                traveledPoints.push(interpolateRoute(i / steps));
+            }
+            traveledPoints.push(pos);
+            traveledLine.setLatLngs(traveledPoints);
+
+            // Rotate rocket
+            const nextPos = interpolateRoute(Math.min(progress + 0.01, 1));
+            const angle = getAngle(pos, nextPos);
+            const rocketEl = document.getElementById('rocketEmoji');
+            if (rocketEl) {
+                if (intercepted) {
+                    rocketEl.textContent = '💥';
+                    rocketEl.style.fontSize = '32px';
+                    rocketEl.style.transform = `rotate(${angle + 270}deg)`;
+                } else {
+                    rocketEl.style.transform = `rotate(${angle + 270}deg)`;
+                }
+            }
+
+            // ETA
+            const remainingSec = Math.max(0, TOTAL_DURATION_SEC - elapsed);
+            const mins = Math.floor(remainingSec / 60);
+            const secs = Math.floor(remainingSec % 60);
+
+            if (intercepted) {
+                etaTimeEl.textContent = '🛡️ יורט!';
+                etaTimeEl.style.fontSize = '40px';
+                etaUnitEl.textContent = 'Intercepted — Iron Dome / Arrow';
+                etaSubtextEl.textContent = '✅ הטיל יורט בהצלחה! שארית נעה באוויר';
+                speedDisplayEl.textContent = `Debris tracking — ${mins}:${secs.toString().padStart(2, '0')} to impact zone`;
+            } else {
+                etaTimeEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+                if (remainingSec > 60) {
+                    etaUnitEl.textContent = 'minutes remaining';
+                    etaSubtextEl.textContent = '🚀 Your delivery is on the way';
+                } else if (remainingSec > 10) {
+                    etaUnitEl.textContent = 'seconds remaining';
+                    etaSubtextEl.textContent = '⚡ Almost there! Prepare for delivery!';
+                } else if (remainingSec > 0) {
+                    etaUnitEl.textContent = 'seconds remaining';
+                    etaSubtextEl.textContent = '🔥 IMMINENT ARRIVAL';
+                }
+            }
+
+            // Progress bar
+            const pct = Math.round(progress * 100);
+            progressFillEl.style.width = pct + '%';
+            progressPercentEl.textContent = pct + '%';
+
+            // Altitude (parabolic arc, peak at 50%)
+            const altKm = Math.round(150 * Math.sin(progress * Math.PI));
+            altitudeValueEl.textContent = altKm + ' km';
+
+            // Speed variation
+            const speed = Math.round(3700 + Math.sin(progress * Math.PI * 4) * 300);
+            speedDisplayEl.textContent = `Speed: ~${speed.toLocaleString()} km/h (Mach ${(speed / 1234).toFixed(1)})`;
+
+            // Status steps
+            updateStatusSteps(progress);
+
+            // Alert banner when close
+            if (remainingSec < 120 && remainingSec > 0) {
+                alertBanner.classList.add('show');
+            }
+
+            // Blast effect near end
+            if (progress > 0.9) {
+                const blastProgress = (progress - 0.9) / 0.1;
+                blastCircle.setRadius(blastProgress * 50000);
+                blastCircle.setStyle({ opacity: blastProgress * 0.5, fillOpacity: blastProgress * 0.15 });
+            }
+
+            // Done
+            if (progress >= 1 && !finished) {
+                finished = true;
+                appMode = 'arrived';
+
+                if (intercepted) {
+                    etaTimeEl.textContent = '🛡️';
+                    etaTimeEl.style.fontSize = '56px';
+                    etaUnitEl.textContent = 'יורט בהצלחה!';
+                    etaSubtextEl.textContent = `✅ Intercepted before reaching ${getDestName()}`;
+                } else {
+                    etaTimeEl.textContent = '💥';
+                    etaUnitEl.textContent = `הגיע ל${getDestNameHe()}`;
+                    etaSubtextEl.textContent = `📦 Delivered to ${getDestName()}!`;
+                }
+                restartBtn.style.display = 'inline-block';
+
+                // Change marker emoji
+                const rocketEl = document.getElementById('rocketEmoji');
+                if (rocketEl) {
+                    rocketEl.textContent = intercepted ? '🛡️' : '💥';
+                    rocketEl.style.transform = 'none';
+                    rocketEl.style.fontSize = '36px';
+                }
+
+                // Explosion effect
+                L.circle(getDestination(), {
+                    radius: 5000,
+                    color: '#ff5722',
+                    fillColor: '#ff9800',
+                    fillOpacity: 0.4,
+                    weight: 3,
+                }).addTo(map);
+
+                setTimeout(() => alertBanner.classList.remove('show'), 3000);
+                return;
+            }
+
+            animationId = requestAnimationFrame(simulate);
+        }
+
+        function restartSimulation() {
+            setIdleState();
+        }
+
+        // ─── REGION SWITCHER ───
+        function setRegion(regionKey) {
+            if (!REGIONS[regionKey]) return;
+            currentRegion = regionKey;
+
+            // Update buttons
+            document.querySelectorAll('.region-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('region' + regionKey.charAt(0).toUpperCase() + regionKey.slice(1)).classList.add('active');
+
+            // Rebuild route
+            ROUTE_POINTS = buildRoutePoints();
+
+            // Update route line on map
+            routeLine.setLatLngs(ROUTE_POINTS);
+
+            // Update destination marker
+            destMarker.setLatLng(getDestination());
+            destMarker.setPopupContent(`<b>${getDestName()}, Israel</b><br>Destination`);
+
+            // Update blast circle center
+            blastCircle.setLatLng(getDestination());
+
+            // Update UI text
+            document.getElementById('destEndpoint').textContent = `🇮🇱 ${getDestName()}, Israel`;
+            document.getElementById('deliveredDesc').textContent = `Arrived at ${getDestName()}`;
+            document.getElementById('destDetail').textContent = `${getDestName()}, Israel 🇮🇱`;
+
+            // Refit map
+            map.fitBounds(routeLine.getBounds().pad(0.15));
+
+            // If we're currently idle or arrived, reset
+            if (appMode === 'idle' || appMode === 'arrived') {
+                setIdleState();
+            } else if (appMode === 'tracking') {
+                // Restart tracking with new target
+                const remaining = TOTAL_DURATION_SEC;
+                setIdleState();
+                activateTracking(remaining / 60);
+            }
+        }
+
+        // Don't auto-start animation — start in idle mode
+        setIdleState();
+
+        // Fit map to route
+        map.fitBounds(routeLine.getBounds().pad(0.15));
+
+        // ─── IDLE STATE ───
+        function setIdleState() {
+            appMode = 'idle';
+            if (animationId) cancelAnimationFrame(animationId);
+            startTime = null;
+            finished = false;
+            intercepted = false;
+
+            const etaCard = document.getElementById('etaCard');
+            etaCard.className = 'eta-card idle';
+            document.getElementById('etaLabel').textContent = 'THREAT STATUS';
+            etaTimeEl.textContent = '☀️';
+            etaTimeEl.style.fontSize = '56px';
+            intercepted = false;
+            etaUnitEl.textContent = 'אין טיל איראני באופק';
+            etaSubtextEl.textContent = `All clear — Monitoring ${getDestName()} area`;
+            speedDisplayEl.textContent = 'Monitoring @beforeredalert...';
+            restartBtn.style.display = 'none';
+            alertBanner.classList.remove('show');
+
+            // Reset map
+            rocketMarker.setLatLng(TEHRAN);
+            rocketMarker.setOpacity(0); // hide rocket in idle
+            traveledLine.setLatLngs([]);
+            traveledLine.setStyle({ color: '#009de0' }); // reset to blue
+            blastCircle.setRadius(0);
+            blastCircle.setStyle({ opacity: 0, fillOpacity: 0 });
+            progressFillEl.style.width = '0%';
+            progressPercentEl.textContent = '0%';
+            const rocketEl = document.getElementById('rocketEmoji');
+            if (rocketEl) {
+                rocketEl.textContent = '🚀';
+                rocketEl.style.fontSize = '28px';
+            }
+
+            // Remove explosion circles
+            map.eachLayer(layer => {
+                if (layer instanceof L.Circle && layer !== blastCircle) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Reset status steps to none active
+            document.querySelectorAll('.status-step').forEach(step => {
+                step.querySelector('.step-icon').classList.remove('active', 'done');
+                const line = step.querySelector('.step-line');
+                if (line) line.classList.remove('active');
+                const desc = step.querySelector('.step-desc');
+                if (desc) desc.classList.remove('active-desc');
+            });
+        }
+
+        // ─── ACTIVATE TRACKING ───
+        function activateTracking(etaMinutes) {
+            if (appMode === 'tracking') return; // already tracking
+            appMode = 'tracking';
+
+            const eta = etaMinutes || DEFAULT_ETA_MINUTES;
+            TOTAL_DURATION_SEC = eta * 60;
+            console.log(`🚀 Tracking activated — ETA: ${eta} min ${etaMinutes ? '(from Telegram)' : '(default)'}`);
+
+            const etaCard = document.getElementById('etaCard');
+            etaCard.className = 'eta-card active-threat';
+            document.getElementById('etaLabel').textContent = 'ESTIMATED TIME OF ARRIVAL';
+            etaTimeEl.style.fontSize = '56px';
+
+            // Show rocket
+            rocketMarker.setOpacity(1);
+            rocketMarker.setLatLng(TEHRAN);
+            const rocketEl = document.getElementById('rocketEmoji');
+            if (rocketEl) {
+                rocketEl.textContent = '🚀';
+                rocketEl.style.fontSize = '28px';
+            }
+
+            // Reset and start animation
+            startTime = null;
+            finished = false;
+            traveledLine.setLatLngs([]);
+            traveledLine.setStyle({ color: '#009de0' }); // reset to blue
+            blastCircle.setRadius(0);
+            blastCircle.setStyle({ opacity: 0, fillOpacity: 0 });
+            progressFillEl.style.width = '0%';
+            progressPercentEl.textContent = '0%';
+
+            animationId = requestAnimationFrame(simulate);
+        }
+
+        // ─── TELEGRAM INTEGRATION ───
+        const API_BASE = window.location.origin;
+        let lastAlertTimestamp = 0;
+        let telegramConnected = false;
+        let initialLoadDone = false;
+        const connectionBadge = document.getElementById('connectionBadge');
+        const telegramStatusEl = document.getElementById('telegramStatus');
+        const alertFeedEl = document.getElementById('alertFeed');
+        const feedEmptyEl = document.getElementById('feedEmpty');
+        const lastCheckEl = document.getElementById('lastCheck');
+
+        // Poll for new alerts every 3 seconds
+        async function pollAlerts() {
+            try {
+                const res = await fetch(`${API_BASE}/api/alerts?since=0`);
+                const data = await res.json();
+
+                // Update connection status
+                if (data.connected !== telegramConnected) {
+                    telegramConnected = data.connected;
+                    updateConnectionUI();
+                }
+
+                // Update "last checked" time
+                lastCheckEl.textContent = `Last checked: ${new Date().toLocaleTimeString()} · ${data.total} messages indexed`;
+
+                // Check latest alerts for recent missile threats
+                const now = Date.now();
+                const allAlerts = data.alerts || [];
+
+                // Find the most recent missile alert
+                let latestMissileAlert = null;
+                for (let i = allAlerts.length - 1; i >= 0; i--) {
+                    if (allAlerts[i].parsed && allAlerts[i].parsed.isMissileAlert) {
+                        latestMissileAlert = allAlerts[i];
+                        break;
+                    }
+                }
+
+                // Populate feed on first load
+                if (!initialLoadDone) {
+                    initialLoadDone = true;
+                    // Show last 10 messages in feed
+                    const recentMsgs = allAlerts.slice(-10);
+                    recentMsgs.forEach(a => addAlertToFeed(a));
+
+                    // Decide: is there an active threat?
+                    if (latestMissileAlert && (now - latestMissileAlert.timestamp) < THIRTY_MINUTES_MS) {
+                        console.log('🚨 Active threat found from Telegram!');
+                        activateTracking(latestMissileAlert.parsed.etaMinutes);
+
+                        // Check if there's a newer interception message after the missile alert
+                        const latestIntercept = allAlerts.slice().reverse().find(a => a.parsed && a.parsed.isIntercepted);
+                        if (latestIntercept && latestIntercept.timestamp > latestMissileAlert.timestamp) {
+                            intercepted = true;
+                            traveledLine.setStyle({ color: '#4caf50' });
+                            const etaCard = document.getElementById('etaCard');
+                            etaCard.className = 'eta-card idle';
+                            console.log('🛡️ Interception already happened!');
+                        }
+                    } else {
+                        console.log('☀️ No recent threat — showing all clear');
+                        setIdleState();
+                    }
+                    return;
+                }
+
+                // On subsequent polls, check for NEW alerts since last check
+                const newAlerts = allAlerts.filter(a => a.timestamp > lastAlertTimestamp);
+                if (newAlerts.length > 0) {
+                    newAlerts.forEach(alert => {
+                        addAlertToFeed(alert);
+                        // If it's a missile alert within 30 min, activate!
+                        if (alert.parsed.isMissileAlert && (now - alert.timestamp) < THIRTY_MINUTES_MS) {
+                            activateTracking(alert.parsed.etaMinutes);
+                        }
+                        // If interception detected while tracking, switch to intercepted state
+                        if (alert.parsed.isIntercepted && appMode === 'tracking' && !intercepted) {
+                            intercepted = true;
+                            console.log('🛡️ INTERCEPTION detected! Switching to intercepted visuals.');
+                            // Update the traveled line color to green
+                            traveledLine.setStyle({ color: '#4caf50' });
+                            // Update ETA card style
+                            const etaCard = document.getElementById('etaCard');
+                            etaCard.className = 'eta-card idle'; // green style
+                        }
+                    });
+                }
+
+                // If we're idle, check if the threat has expired (>30 min old)
+                if (appMode === 'idle') {
+                    // Already idle, stay idle
+                } else if (appMode === 'tracking' || appMode === 'arrived') {
+                    // If no missile alert in last 30 min, go back to idle
+                    if (!latestMissileAlert || (now - latestMissileAlert.timestamp) >= THIRTY_MINUTES_MS) {
+                        if (appMode !== 'arrived') setIdleState();
+                    }
+                }
+
+                if (allAlerts.length > 0) {
+                    lastAlertTimestamp = allAlerts[allAlerts.length - 1].timestamp;
+                }
+
+            } catch (err) {
+                // Server not running
+                lastCheckEl.textContent = 'Server offline — run: node server.js';
+            }
+        }
+
+        function updateConnectionUI() {
+            if (telegramConnected) {
+                connectionBadge.textContent = '📡 TELEGRAM LIVE';
+                connectionBadge.style.background = 'rgba(46,125,50,0.3)';
+                telegramStatusEl.textContent = 'Connected';
+                telegramStatusEl.className = 'telegram-status connected';
+            } else {
+                connectionBadge.textContent = '📡 Connecting...';
+                connectionBadge.style.background = 'rgba(255,255,255,0.2)';
+                telegramStatusEl.textContent = 'Connecting...';
+                telegramStatusEl.className = 'telegram-status disconnected';
+            }
+        }
+
+        function addAlertToFeed(alert) {
+            if (feedEmptyEl) feedEmptyEl.style.display = 'none';
+
+            const item = document.createElement('div');
+            const isInterceptedAlert = alert.parsed && alert.parsed.isIntercepted;
+            const isMissile = alert.parsed && alert.parsed.isMissileAlert;
+            let cssClass = 'feed-item';
+            if (isInterceptedAlert) cssClass += ' intercepted-alert';
+            else if (isMissile) cssClass += ' missile-alert';
+            item.className = cssClass;
+
+            const time = new Date(alert.timestamp).toLocaleTimeString();
+            const ago = getTimeAgo(alert.timestamp);
+            item.innerHTML = `
+                <div class="feed-time">${time} (${ago})</div>
+                <div class="feed-text">${escapeHtml(alert.raw.substring(0, 200))}</div>
+                ${isInterceptedAlert ?
+                    `<div class="feed-origin" style="color:#4caf50;">🛡️ יורט!</div>` :
+                    (isMissile ?
+                    `<div class="feed-origin">🚀 ${alert.parsed.origin} → ${alert.parsed.target}${alert.parsed.etaMinutes ? ` (ETA: ${alert.parsed.etaMinutes}min)` : ''}</div>` :
+                    '')}
+            `;
+
+            alertFeedEl.insertBefore(item, alertFeedEl.firstChild);
+
+            // Keep max 15 items
+            while (alertFeedEl.children.length > 16) {
+                alertFeedEl.removeChild(alertFeedEl.lastChild);
+            }
+        }
+
+        function getTimeAgo(timestamp) {
+            const diff = Date.now() - timestamp;
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return `${mins}m ago`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `${hours}h ago`;
+            return `${Math.floor(hours / 24)}d ago`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function sendTestAlert() {
+            try {
+                const res = await fetch(`${API_BASE}/api/alerts/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: '🚨 צבע אדום: ירי טילים בליסטיים מאיראן לעבר ישראל. היכנסו למרחב מוגן!'
+                    }),
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    addAlertToFeed(data.alert);
+                    activateTracking(data.alert.parsed.etaMinutes);
+                }
+            } catch (err) {
+                // Server not running — local mock
+                const mockAlert = {
+                    id: Date.now(),
+                    timestamp: Date.now(),
+                    source: 'local-test',
+                    raw: '🚨 צבע אדום: ירי טילים בליסטיים מאיראן לעבר ישראל. היכנסו למרחב מוגן!',
+                    parsed: {
+                        isMissileAlert: true,
+                        origin: 'Iran',
+                        target: getDestName(),
+                        etaMinutes: null,
+                        count: 1,
+                    },
+                };
+                addAlertToFeed(mockAlert);
+                activateTracking(null); // will use DEFAULT_ETA_MINUTES
+            }
+        }
+
+        // Start polling
+        setInterval(pollAlerts, 3000);
+        pollAlerts();
+    </script>
+</body>
+</html>
