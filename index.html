@@ -969,7 +969,7 @@
         const TEHRAN = [35.6892, 51.3890];
         const DEFAULT_ETA_MINUTES = 5;
         let TOTAL_DURATION_SEC = DEFAULT_ETA_MINUTES * 60; // default 5 min, overridden by Telegram ETA
-        const THIRTY_MINUTES_MS = 30 * 60 * 1000;
+        const ALERT_FRESHNESS_MS = 6 * 60 * 1000; // ignore alerts older than 6 minutes
 
         // ─── REGIONS ───
         const REGIONS = {
@@ -1511,7 +1511,7 @@
                     recentMsgs.forEach(a => addAlertToFeed(a));
 
                     // Decide: is there an active threat?
-                    if (latestMissileAlert && (now - latestMissileAlert.timestamp) < THIRTY_MINUTES_MS) {
+                    if (latestMissileAlert && (now - latestMissileAlert.timestamp) < ALERT_FRESHNESS_MS) {
                         console.log('🚨 Active threat found from Telegram!');
                         activateTracking(latestMissileAlert.parsed.etaMinutes);
 
@@ -1537,7 +1537,7 @@
                     newAlerts.forEach(alert => {
                         addAlertToFeed(alert);
                         // If it's a missile alert within 30 min, activate!
-                        if (alert.parsed.isMissileAlert && (now - alert.timestamp) < THIRTY_MINUTES_MS) {
+                        if (alert.parsed.isMissileAlert && (now - alert.timestamp) < ALERT_FRESHNESS_MS) {
                             activateTracking(alert.parsed.etaMinutes);
                         }
                         // If interception detected while tracking, switch to intercepted state
@@ -1558,7 +1558,7 @@
                     // Already idle, stay idle
                 } else if (appMode === 'tracking' || appMode === 'arrived') {
                     // If no missile alert in last 30 min, go back to idle
-                    if (!latestMissileAlert || (now - latestMissileAlert.timestamp) >= THIRTY_MINUTES_MS) {
+                    if (!latestMissileAlert || (now - latestMissileAlert.timestamp) >= ALERT_FRESHNESS_MS) {
                         if (appMode !== 'arrived') setIdleState();
                     }
                 }
