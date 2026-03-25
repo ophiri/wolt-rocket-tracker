@@ -1054,8 +1054,20 @@
         // ─── INIT MAP ───
         const map = L.map('map', {
             zoomControl: true,
-            scrollWheelZoom: true,
+            scrollWheelZoom: false,
+            dragging: !L.Browser.mobile,
+            tap: false,
         }).setView([33.5, 43.0], 5);
+
+        // Enable full interaction on click, disable on mouse leave
+        map.getContainer().addEventListener('click', () => {
+            map.scrollWheelZoom.enable();
+            map.dragging.enable();
+        });
+        map.getContainer().addEventListener('mouseleave', () => {
+            map.scrollWheelZoom.disable();
+            if (L.Browser.mobile) map.dragging.disable();
+        });
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '© OpenStreetMap © CARTO',
